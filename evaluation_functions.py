@@ -18,6 +18,20 @@ def build_index_kgraph(X):
     index.build(X)
     return index
 
+def query_kgraph(index, item_num, number_of_neighbors):
+    return t.search(data = X, query = X[item_num:item_num+1], K = number_of_neighbors)
+
+def query_kgraph_random_vector(index, query_vector, number_of_neighbors):
+    return t.search(data = X, query = np.array([query_vector]), K = number_of_neighbors)
+
+def query_kgraph_ANNOY(X, index_structure, item_num, number_of_neighbors):
+    params = {'index':index_structure, 'item_num':item_num, 'number_of_neighbors':number_of_neighbors}
+    return params
+
+def query_params_kgraph_random_vector(X, index_structure, query_vector, number_of_neighbors):
+    params = {'index':index_structure, 'query_vector':query_vector, 'number_of_neighbors':number_of_neighbors}
+    return params
+
 ##Functions for ANNOY
 def build_index_ANNOY(X):
     f = X.shape[1]
