@@ -175,7 +175,8 @@ class LSH_forest(object):
 
     def query_num_candidates(self, query = None, c = 1, m = 10):
         """
-        returns the number of neighbors for a given query.
+        returns the nearest neighbors for a given query the number of required 
+        candidates.
         """
         if query == None:
             raise ValueError("query cannot be None.")
