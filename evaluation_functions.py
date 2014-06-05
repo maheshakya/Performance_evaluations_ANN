@@ -339,11 +339,11 @@ def precision_test_random_vector(X, limits = [10, 100, 1000] , imp = ANNOY_funct
         print 'finding the nearest neighnor for a random vector'
         params = ann.query_params(X, t, query_vector, n)
         
-        closest = set(ann.query(**params)[:k])
+        closest = set(ann.query_random_vector(**params)[:k])
         for limit in limits:
             params = ann.query_params(X, t, query_vector, limit)
             t0 = time.time()
-            toplist = ann.query(**params)
+            toplist = ann.query_random_vector(**params)
             T = time.time() - t0
             
             found = len(closest.intersection(toplist))
@@ -385,6 +385,47 @@ def precision_test_candidates_LSH_F(X, limits = [10, 100, 1000], iterations = 10
         for limit in limits:
             t0 = time.time()
             neighbors, candidates= t.query_num_candidates(X[j], c=limit)
+            T = time.time() - t0
+            toplist = neighbors[:k]
+            
+            found = len(closest.intersection(toplist))
+            hitrate = 1.0 * found / k
+            prec_sum[limit] = prec_sum.get(limit, 0.0) + hitrate
+            time_sum[limit] = time_sum.get(limit, 0.0) + T
+            candidate_sum[limit] = candidate_sum.get(limit, 0) + candidates            
+
+        for limit in limits:
+            print 'limit: %.8f precision: %6.2f%% avg time: %.6fs avg_candiates: %.1f' % (limit, 100.0 * 
+                                                                      prec_sum[limit] / (i + 1), time_sum[limit] / (i + 1), 
+                                                                      candidate_sum[limit]/ (i+1))
+    
+    return prec_sum, time_sum, candidate_sum
+
+
+# random vector
+def precision_test_candidates_LSH_F_random(X, limits = [10, 100, 1000], iterations = 100):
+    f = X.shape[1]
+    n = X.shape[0]
+
+    t = LSH_forest(number_of_trees=10)
+    t.build_index(X)
+    
+    limits = limits
+    k = 10
+    prec_sum = {}
+    prec_n = iterations
+    time_sum = {}
+    candidate_sum = {}
+
+    for i in xrange(prec_n):
+        query_vector = np.random.random(size=f)
+        print 'finding nbs for a random vector'
+        
+        neighbors, candidates = t.query_num_candidates(query_vector, c=n)
+        closest = set(neighbors[:k])
+        for limit in limits:
+            t0 = time.time()
+            neighbors, candidates= t.query_num_candidates(query_vector, c=limit)
             T = time.time() - t0
             toplist = neighbors[:k]
             
