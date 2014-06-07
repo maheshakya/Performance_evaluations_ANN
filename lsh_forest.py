@@ -1,5 +1,7 @@
 import numpy as np
 from sklearn.metrics import euclidean_distances
+#from binary_searches import simpleFunctionBisectReImplemented, find_longest_prefix_match
+
 
 #Re-implementation of bisect functions of bisect module to suit the application
 def bisect_left(a, x):
@@ -48,6 +50,7 @@ def find_longest_prefix_match(bit_string_list, query):
             hi = mid            
         
     return res
+
 
 class LSH_forest(object):
     """
@@ -190,6 +193,40 @@ class LSH_forest(object):
             if k > max_depth:
                 max_depth = k
                 
+        #Synchronous ascend phase
+        candidates = []
+        number_of_candidates = c*len(self.trees)
+        while max_depth > 0 and (len(candidates) < number_of_candidates or len(set(candidates)) < m):
+            for i in range(len(self.trees)):
+                bin_query = self._hash(query, self.hash_functions[i])
+                candidates.extend(self.original_indices[i,simpleFunctionBisectReImplemented(self.trees[i], 
+                                                                                            bin_query, max_depth)].tolist())
+                #candidates = list(OrderedSet(candidates)) #this keeps the order inserted into the list 
+            max_depth = max_depth - 1
+            print max_depth, len(candidates) ,len(set(candidates))
+        candidates = np.array(list(set(candidates)))
+        ranks, distances = self._compute_distances(query, candidates)
+        #print ranks[0,:m]        
+        return candidates[ranks[0,:m]], candidates.shape[0]
+
+
+    def query_candidates(self, query = None, c = 1, m = 10):
+        """
+        returns the nearest neighbors for a given query the number of required 
+        candidates.
+        """
+        if query == None:
+            raise ValueError("query cannot be None.")
+        query = np.array(query)
+        
+        #descend phase
+        max_depth = 0
+        for i in range(len(self.trees)):
+            bin_query = self._hash(query, self.hash_functions[i])
+            k = find_longest_prefix_match(self.trees[i], bin_query)
+            if k > max_depth:
+                max_depth = k
+                
         #Asynchronous ascend phase
         candidates = []
         number_of_candidates = c*len(self.trees)
@@ -200,11 +237,21 @@ class LSH_forest(object):
                                                                                             bin_query, max_depth)].tolist())
                 #candidates = list(OrderedSet(candidates)) #this keeps the order inserted into the list 
             max_depth = max_depth - 1
-            #print max_depth, len(candidates) ,len(set(candidates))
+            print max_depth, len(candidates) ,len(set(candidates))
         candidates = np.array(list(set(candidates)))
         ranks, distances = self._compute_distances(query, candidates)
         #print ranks[0,:m]        
-        return candidates[ranks[0,:m]], candidates.shape[0]
+        return candidates[ranks[0,:m]], candidates
+
+
+    def get_candidates_for_hash_length(self, query, hash_length):
+        candidates = []        
+        for i in range(len(self.trees)):
+            bin_query = self._hash(query, self.hash_functions[i])
+            candidates.extend(self.original_indices[i,simpleFunctionBisectReImplemented(self.trees[i], 
+                                                                                            bin_query, hash_length)].tolist())
+            
+        return np.unique(candidates)
                 
                 
 
