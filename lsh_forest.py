@@ -51,6 +51,12 @@ def find_longest_prefix_match(bit_string_list, query):
         
     return res
 
+def simple_euclidean_distance(query, candidates):
+    distances = np.zeros(candidates.shape[0])    
+    for i in range(candidates.shape[0]):        
+        distances[i] = np.linalg.norm(candidates[i]-query)        
+    return distances
+
 
 class LSH_forest(object):
     """
@@ -108,7 +114,8 @@ class LSH_forest(object):
         return o_i, np.sort(binary_hashes)
     
     def _compute_distances(self, query, candidates):
-        distances = euclidean_distances(query, self.input_array[candidates])
+        #distances = euclidean_distances(query, self.input_array[candidates])
+        distances = simple_euclidean_distance(query, self.input_array[candidates])
         return np.argsort(distances), distances
         
         
@@ -174,7 +181,7 @@ class LSH_forest(object):
         ranks, distances = self._compute_distances(query, candidates)
         #print ranks[0,:m]
         print candidates.shape
-        return candidates[ranks[0,:m]]
+        return candidates[ranks[:m]]
 
     def query_num_candidates(self, query = None, c = 1, m = 10):
         """
@@ -203,11 +210,11 @@ class LSH_forest(object):
                                                                                             bin_query, max_depth)].tolist())
                 #candidates = list(OrderedSet(candidates)) #this keeps the order inserted into the list 
             max_depth = max_depth - 1
-            print max_depth, len(candidates) ,len(set(candidates))
+            #print max_depth, len(candidates) ,len(set(candidates))
         candidates = np.array(list(set(candidates)))
         ranks, distances = self._compute_distances(query, candidates)
         #print ranks[0,:m]        
-        return candidates[ranks[0,:m]], candidates.shape[0]
+        return candidates[ranks[:m]], candidates.shape[0]
 
 
     def query_candidates(self, query = None, c = 1, m = 10):
@@ -237,11 +244,11 @@ class LSH_forest(object):
                                                                                             bin_query, max_depth)].tolist())
                 #candidates = list(OrderedSet(candidates)) #this keeps the order inserted into the list 
             max_depth = max_depth - 1
-            print max_depth, len(candidates) ,len(set(candidates))
+            #print max_depth, len(candidates) ,len(set(candidates))
         candidates = np.array(list(set(candidates)))
         ranks, distances = self._compute_distances(query, candidates)
         #print ranks[0,:m]        
-        return candidates[ranks[0,:m]], candidates
+        return candidates[ranks[:m]], candidates
 
 
     def get_candidates_for_hash_length(self, query, hash_length):
