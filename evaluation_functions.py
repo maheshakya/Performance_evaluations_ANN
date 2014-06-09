@@ -189,6 +189,31 @@ def queryTimes_nearest(X, imp = ANNOY_functions):
         print 'avg time: %.6fs' % (time_sum / (i + 1))
         
     return time_sum / lim_n
+
+def queryTimes_nearest_LSHF(X, imp = lsh_forest_functions, c=1):
+    f = X.shape[1]
+    n = X.shape[0]
+    
+    ann = imp()
+    t = ann.build_index(X) 
+
+    lim_n = 1000
+    time_sum = 0
+
+    for i in xrange(lim_n):
+        j = np.random.randint(0, n)
+        print 'finding the nearest neighnor for', j        
+        params = ann.query_params(X, t, j, c)
+        
+        t0 = time.time()
+        neighbors = ann.query(**params)
+        T = time.time() - t0
+        
+        time_sum = time_sum + T
+        
+        print 'avg time: %.6fs' % (time_sum / (i + 1))
+        
+    return time_sum / lim_n
         
 #Qyery speed tests for nearest neighbor : a random data point
 def queryTimes_nearest_random_vector(X, imp = ANNOY_functions):
@@ -205,6 +230,31 @@ def queryTimes_nearest_random_vector(X, imp = ANNOY_functions):
         query_vector = np.random.random(size=f)
         print 'finding the nearest neighnor for a random vector'      
         params = ann.query_params(X, t, query_vector, 1)
+        
+        t0 = time.time()
+        neighbors = ann.query(**params)
+        T = time.time() - t0
+        
+        time_sum = time_sum + T
+        
+        print 'avg time: %.6fs' % (time_sum / (i + 1))
+        
+    return time_sum / lim_n
+
+def queryTimes_nearest_random_vector_LSHF(X, imp = lsh_forest_functions, c=1):
+    f = X.shape[1]
+    n = X.shape[0]
+    
+    ann = imp()
+    t = ann.build_index(X)
+
+    lim_n = 1000
+    time_sum = 0
+
+    for i in xrange(lim_n):
+        query_vector = np.random.random(size=f)
+        print 'finding the nearest neighnor for a random vector'      
+        params = ann.query_params(X, t, query_vector, c)
         
         t0 = time.time()
         neighbors = ann.query(**params)

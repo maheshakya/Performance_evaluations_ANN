@@ -5,6 +5,7 @@ from sklearn.metrics import euclidean_distances
 
 #Re-implementation of bisect functions of bisect module to suit the application
 def bisect_left(a, x):
+    """
     lo = 0
     hi = len(a)
     while lo < hi:
@@ -14,6 +15,8 @@ def bisect_left(a, x):
         else:
             hi = mid
     return lo
+    """
+    return np.searchsorted(a, x)
             
 def bisect_right(a, x):
     lo = 0
@@ -50,6 +53,22 @@ def find_longest_prefix_match(bit_string_list, query):
             hi = mid            
         
     return res
+
+def binary_search_string_equality(str1, str2):
+    hi = len(str1)
+    lo = 0
+    while lo < hi:
+        mid = (hi+lo)//2        
+        if str1[:mid] == str2[:mid]:
+            lo = mid + 1
+        else:
+            hi = mid
+    return lo-1
+
+def get_longest_prefix_length(bit_strings_array, query):
+    pos = np.searchsorted(bit_strings_array, query)
+    return np.max([binary_search_string_equality(bit_strings_array[pos-1],query), 
+                   binary_search_string_equality(bit_strings_array[pos], query)])
 
 def simple_euclidean_distance(query, candidates):
     distances = np.zeros(candidates.shape[0])    
@@ -162,7 +181,7 @@ class LSH_forest(object):
         max_depth = 0
         for i in range(len(self.trees)):
             bin_query = self._hash(query, self.hash_functions[i])
-            k = find_longest_prefix_match(self.trees[i], bin_query)
+            k = get_longest_prefix_length(self.trees[i], bin_query)
             if k > max_depth:
                 max_depth = k
                 
@@ -177,7 +196,7 @@ class LSH_forest(object):
                 #candidates = list(OrderedSet(candidates)) #this keeps the order inserted into the list 
             max_depth = max_depth - 1
             #print max_depth, len(candidates) ,len(set(candidates))
-        candidates = np.array(list(set(candidates)))
+        candidates = np.unique(candidates)
         ranks, distances = self._compute_distances(query, candidates)
         #print ranks[0,:m]
         print candidates.shape
@@ -196,7 +215,7 @@ class LSH_forest(object):
         max_depth = 0
         for i in range(len(self.trees)):
             bin_query = self._hash(query, self.hash_functions[i])
-            k = find_longest_prefix_match(self.trees[i], bin_query)
+            k = get_longest_prefix_length(self.trees[i], bin_query)
             if k > max_depth:
                 max_depth = k
                 
@@ -211,7 +230,7 @@ class LSH_forest(object):
                 #candidates = list(OrderedSet(candidates)) #this keeps the order inserted into the list 
             max_depth = max_depth - 1
             #print max_depth, len(candidates) ,len(set(candidates))
-        candidates = np.array(list(set(candidates)))
+        candidates = np.unique(candidates)
         ranks, distances = self._compute_distances(query, candidates)
         #print ranks[0,:m]        
         return candidates[ranks[:m]], candidates.shape[0]
@@ -230,7 +249,7 @@ class LSH_forest(object):
         max_depth = 0
         for i in range(len(self.trees)):
             bin_query = self._hash(query, self.hash_functions[i])
-            k = find_longest_prefix_match(self.trees[i], bin_query)
+            k = get_longest_prefix_length(self.trees[i], bin_query)
             if k > max_depth:
                 max_depth = k
                 
@@ -245,7 +264,7 @@ class LSH_forest(object):
                 #candidates = list(OrderedSet(candidates)) #this keeps the order inserted into the list 
             max_depth = max_depth - 1
             #print max_depth, len(candidates) ,len(set(candidates))
-        candidates = np.array(list(set(candidates)))
+        candidates = np.unique(candidates)
         ranks, distances = self._compute_distances(query, candidates)
         #print ranks[0,:m]        
         return candidates[ranks[:m]], candidates
