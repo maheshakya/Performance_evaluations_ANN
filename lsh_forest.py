@@ -204,12 +204,12 @@ class LSH_forest(object):
         #Synchronous ascend phase
         candidates = []
         number_of_candidates = c*len(self.trees)
-        while max_depth > 0 and (len(candidates) < number_of_candidates or len(set(candidates)) < m):
+        while max_depth > lower_bound and (len(candidates) < number_of_candidates or len(set(candidates)) < m):
             for i in range(len(self.trees)):                
                 candidates.extend(self.original_indices[i,simpleFunctionBisectReImplemented(self.trees[i], 
                                                                                             bin_queries[i], max_depth)].tolist())
                 #candidates = list(OrderedSet(candidates)) #this keeps the order inserted into the list 
-            max_depth = max_depth - lower_bound
+            max_depth = max_depth - 1
             #print max_depth, len(candidates) ,len(set(candidates))
         candidates = np.unique(candidates)
         ranks, distances = self._compute_distances(query, candidates)
@@ -242,12 +242,12 @@ class LSH_forest(object):
         #Synchronous ascend phase
         candidates = []
         number_of_candidates = c*len(self.trees)
-        while max_depth > 3 and (len(candidates) < number_of_candidates or len(set(candidates)) < m):
+        while max_depth > lower_bound and (len(candidates) < number_of_candidates or len(set(candidates)) < m):
             for i in range(len(self.trees)):
                 candidates.extend(self.original_indices[i,simpleFunctionBisectReImplemented(self.trees[i], 
                                                                                             bin_queries[i], max_depth)].tolist())
                 #candidates = list(OrderedSet(candidates)) #this keeps the order inserted into the list 
-            max_depth = max_depth - lower_bound
+            max_depth = max_depth - 1
             #print max_depth, len(candidates) ,len(set(candidates))
         candidates = np.unique(candidates)
         ranks, distances = self._compute_distances(query, candidates)
@@ -279,12 +279,12 @@ class LSH_forest(object):
         #Synchronous ascend phase
         candidates = []
         number_of_candidates = c*len(self.trees)
-        while max_depth > 0 and (len(candidates) < number_of_candidates or len(set(candidates)) < m):
+        while max_depth > lower_bound and (len(candidates) < number_of_candidates or len(set(candidates)) < m):
             for i in range(len(self.trees)):            
                 candidates.extend(self.original_indices[i,simpleFunctionBisectReImplemented(self.trees[i], 
                                                                                             bin_queries[i], max_depth)].tolist())
                 #candidates = list(OrderedSet(candidates)) #this keeps the order inserted into the list 
-            max_depth = max_depth - lower_bound
+            max_depth = max_depth - 1
             #print max_depth, len(candidates) ,len(set(candidates))
         candidates = np.unique(candidates)
         ranks, distances = self._compute_distances(query, candidates)
