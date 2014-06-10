@@ -70,11 +70,28 @@ def get_longest_prefix_length(bit_strings_array, query):
     return np.max([binary_search_string_equality(bit_strings_array[pos-1],query), 
                    binary_search_string_equality(bit_strings_array[pos], query)])
 
+def get_longest_prefix_length_with_position(bit_strings_array, query):
+    pos = np.searchsorted(bit_strings_array, query)
+    return pos, np.max([binary_search_string_equality(bit_strings_array[pos-1],query), 
+                        binary_search_string_equality(bit_strings_array[pos], query)])
+
 def simple_euclidean_distance(query, candidates):
     distances = np.zeros(candidates.shape[0])    
     for i in range(candidates.shape[0]):        
         distances[i] = np.linalg.norm(candidates[i]-query)        
     return distances
+
+def get_positional_cands(length, pos, num):
+    cands = []
+    if num == 0:
+        cands.append(pos)
+        return cands
+    if pos+num < length:
+        cands.append(pos+num)
+    if pos-num >= 0:
+        cands.append(pos-num)
+        
+    return cands
 
 
 class LSH_forest(object):
@@ -154,12 +171,7 @@ class LSH_forest(object):
         self.trees = []
         self.original_indices = []
         for i in range(self.number_of_trees):
-            """"
-            hash_size = self.random_state.randint(self.min_label_length, 
-                                                  self.max_label_length+1)
-            """
-            hash_size = self.max_label_length
-            hash_function = self._get_random_hyperplanes(hash_size = hash_size, dim = dim)
+            hash_function = self._get_random_hyperplanes(hash_size = self.max_label_length, dim = dim)
             o_i, bin_hashes = self._create_tree(input_array, hash_function)
             self.original_indices.append(o_i)
             self.trees.append(bin_hashes)
@@ -169,7 +181,7 @@ class LSH_forest(object):
         self.trees = np.array(self.trees)
         self.original_indices = np.array(self.original_indices)
         
-    def query(self, query = None, c = 1, m = 10):
+    def query(self, query = None, c = 1, m = 10, lower_bound = 4):
         """
         returns the number of neighbors for a given query.
         """
@@ -184,25 +196,29 @@ class LSH_forest(object):
             k = get_longest_prefix_length(self.trees[i], bin_query)
             if k > max_depth:
                 max_depth = k
-                
-        #Asynchronous ascend phase
+        
+        bin_queries = []
+        for i in range(len(self.trees)):
+            bin_queries.append(self._hash(query, self.hash_functions[i]))
+
+        #Synchronous ascend phase
         candidates = []
         number_of_candidates = c*len(self.trees)
         while max_depth > 0 and (len(candidates) < number_of_candidates or len(set(candidates)) < m):
-            for i in range(len(self.trees)):
-                bin_query = self._hash(query, self.hash_functions[i])
+            for i in range(len(self.trees)):                
                 candidates.extend(self.original_indices[i,simpleFunctionBisectReImplemented(self.trees[i], 
-                                                                                            bin_query, max_depth)].tolist())
+                                                                                            bin_queries[i], max_depth)].tolist())
                 #candidates = list(OrderedSet(candidates)) #this keeps the order inserted into the list 
-            max_depth = max_depth - 1
+            max_depth = max_depth - lower_bound
             #print max_depth, len(candidates) ,len(set(candidates))
         candidates = np.unique(candidates)
         ranks, distances = self._compute_distances(query, candidates)
         #print ranks[0,:m]
         print candidates.shape
         return candidates[ranks[:m]]
-
-    def query_num_candidates(self, query = None, c = 1, m = 10):
+    
+    
+    def query_num_candidates(self, query = None, c = 1, m = 10, lower_bound = 4):
         """
         returns the nearest neighbors for a given query the number of required 
         candidates.
@@ -219,16 +235,19 @@ class LSH_forest(object):
             if k > max_depth:
                 max_depth = k
                 
+        bin_queries = []
+        for i in range(len(self.trees)):
+            bin_queries.append(self._hash(query, self.hash_functions[i]))
+                
         #Synchronous ascend phase
         candidates = []
         number_of_candidates = c*len(self.trees)
-        while max_depth > 0 and (len(candidates) < number_of_candidates or len(set(candidates)) < m):
+        while max_depth > 3 and (len(candidates) < number_of_candidates or len(set(candidates)) < m):
             for i in range(len(self.trees)):
-                bin_query = self._hash(query, self.hash_functions[i])
                 candidates.extend(self.original_indices[i,simpleFunctionBisectReImplemented(self.trees[i], 
-                                                                                            bin_query, max_depth)].tolist())
+                                                                                            bin_queries[i], max_depth)].tolist())
                 #candidates = list(OrderedSet(candidates)) #this keeps the order inserted into the list 
-            max_depth = max_depth - 1
+            max_depth = max_depth - lower_bound
             #print max_depth, len(candidates) ,len(set(candidates))
         candidates = np.unique(candidates)
         ranks, distances = self._compute_distances(query, candidates)
@@ -236,7 +255,7 @@ class LSH_forest(object):
         return candidates[ranks[:m]], candidates.shape[0]
 
 
-    def query_candidates(self, query = None, c = 1, m = 10):
+    def query_candidates(self, query = None, c = 1, m = 10, lower_bound = 4):
         """
         returns the nearest neighbors for a given query the number of required 
         candidates.
@@ -252,17 +271,20 @@ class LSH_forest(object):
             k = get_longest_prefix_length(self.trees[i], bin_query)
             if k > max_depth:
                 max_depth = k
-                
-        #Asynchronous ascend phase
+
+        bin_queries = []
+        for i in range(len(self.trees)):
+            bin_queries.append(self._hash(query, self.hash_functions[i]))  
+
+        #Synchronous ascend phase
         candidates = []
         number_of_candidates = c*len(self.trees)
         while max_depth > 0 and (len(candidates) < number_of_candidates or len(set(candidates)) < m):
-            for i in range(len(self.trees)):
-                bin_query = self._hash(query, self.hash_functions[i])
+            for i in range(len(self.trees)):            
                 candidates.extend(self.original_indices[i,simpleFunctionBisectReImplemented(self.trees[i], 
-                                                                                            bin_query, max_depth)].tolist())
+                                                                                            bin_queries[i], max_depth)].tolist())
                 #candidates = list(OrderedSet(candidates)) #this keeps the order inserted into the list 
-            max_depth = max_depth - 1
+            max_depth = max_depth - lower_bound
             #print max_depth, len(candidates) ,len(set(candidates))
         candidates = np.unique(candidates)
         ranks, distances = self._compute_distances(query, candidates)
@@ -278,11 +300,3 @@ class LSH_forest(object):
                                                                                             bin_query, hash_length)].tolist())
             
         return np.unique(candidates)
-                
-                
-
-            
-        
-    
-
-                
